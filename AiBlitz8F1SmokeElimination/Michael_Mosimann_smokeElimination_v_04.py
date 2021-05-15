@@ -25,6 +25,4 @@ if __name__ == '__main__': #évite des problem de broken pipe, merci à tanujjai
 
     # converting the images to gray to see if results will improve.
     # Training phase, create model
-    dls = ImageDataLoaders.from_folder(data_folder)
-    print(dls)
-    print(dls.valid_ds.items[:])
+    dls = ImageDataLoaders.from_folder(data_folder,train="train", valid="valid",test="test")
