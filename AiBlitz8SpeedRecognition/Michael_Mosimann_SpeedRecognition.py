@@ -36,17 +36,17 @@ if __name__ == '__main__': #évite des problem de broken pipe, merci à tanujjai
     #    img.save(os.path.join(test_submission_path, f"{img_name}"))
     # Training phase, create model
     #dls = ImageDataLoaders.from_df(train_df, path=os.path.join(data_folder, "train"), bs=8, y_block=RegressionBlock)
-    dls = ImageDataLoaders.from_df(train_df, path=os.path.join(data_folder, "train_gray"), bs=8, y_block=RegressionBlock)
+    dls = ImageDataLoaders.from_df(train_df, path=os.path.join(data_folder, "train"), bs=8, y_block=RegressionBlock)
     dls.show_batch()
     #dls_val = ImageDataLoaders.from_df(val_df, path=os.path.join(data_folder, "val"), bs=8, y_block=RegressionBlock)
     #dls_val.show_batch()
-    learn = cnn_learner(dls, alexnet, metrics=mse)  # model creation/loading.
+    learn = cnn_learner(dls, resnet18, metrics=mse)  # model creation/loading.
     learn.summary()
     # learn = cnn_learner(dls, resnet18, metrics=mse)
     # Train the model
     learn.fine_tune(1)
     # Test phase, Loading test set
-    test_imgs_name = get_image_files(os.path.join(data_folder, "test_gray"))
+    test_imgs_name = get_image_files(os.path.join(data_folder, "test"))
     test_dls = dls.test_dl(test_imgs_name)
 
     test_img_ids = [re.sub(r"\D", "", str(img_name)) for img_name in test_imgs_name]
