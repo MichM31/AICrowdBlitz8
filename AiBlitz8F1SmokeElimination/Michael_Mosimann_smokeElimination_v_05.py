@@ -1,42 +1,47 @@
-import cv2
-import matplotlib.pyplot as plt
-import os
-from PIL import Image
-from glob import glob
-import random
-from tqdm.notebook import tqdm 
-import pandas as pd
-from fastai.vision.all import *
-from fastai.data.core import *
-from fastai.vision.gan import *
+# load, split and scale the maps dataset ready for training
+from os import listdir
+from numpy import asarray
+from numpy import vstack
+from keras.preprocessing.image import img_to_array
+from keras.preprocessing.image import load_img
+from numpy import savez_compressed
 
-data_directiory = "data"
-train_path = os.path.join(data_directiory, "train")
-train_smoke_path = os.path.join(data_directiory, "train/smoke")
-train_clear_path = os.path.join(data_directiory, "train/clear")
-val_path = os.path.join(data_directiory, "val")
-val_smoke_path = os.path.join(data_directiory, "val/smoke")
-val_clear_path = os.path.join(data_directiory, "val/clear")
-test_data_path = os.path.join(data_directiory, "test/smoke")
-test_submission_path = "clear"
+# load all images in a directory into memory
+def load_images(path,path2, size=(256,256)):
+  src_list, tar_list = list(), list()
+  # enumerate filenames in directory, assume all are images
+  i = 0
+  for filename in listdir(path):
+    if (i == 2000):
+      break
+    else:
+      # load and resize the image
+      clear_img = load_img(path + filename, target_size=size)
+      # convert to numpy array
+      clear_img = img_to_array(clear_img)
+      tar_list.append(clear_img)
+      i = i +1
+      print(i)
+  i = 0
+  for filename in listdir(path2):
+    if (i == 2000):
+      break
+    else:
+      i = i +1
+      # load and resize the image
+      smoke_img = load_img(path2 + filename, target_size=size)
+      # convert to numpy array
+      smoke_img = img_to_array(smoke_img)
+      src_list.append(smoke_img)
+  return [asarray(src_list), asarray(tar_list)]
 
-dls = ImageDataLoaders.from_folder(data_directiory,train="train",valid="val")
-#dls = ImageDataLoaders.from_folder(data_directiory,train="train", valid="val",test="test")
-print(dls.items)
-print(len(dls.items))
-print(dls.valid_ds.items)
-print(len(dls.valid_ds.items))
-
-generator = basic_generator(64, n_channels=3, n_extra_layers=1)
-critic    = basic_critic   (64, n_channels=3, n_extra_layers=1)
-#critic    = basic_critic   (64, n_channels=3, n_extra_layers=1, act_cls=partial(nn.LeakyReLU, negative_slope=0.2))
-
-#learn = unet_learner(dls, models.resnet34, loss_func=CrossEntropyLossFlat(axis=1), y_range=(0,1))
-#learn = GANLearner.wgan(dls, generator, critic, opt_func = RMSProp)
-learn = GANLearner.wgan(dls, generator, critic, metrics="mse")
-print(learn)
-learn.metrics
-print(dls)
-
-learn.fine_tune(1)
-
+# dataset path
+path = 'data/train/clear/'
+path2 = 'data/train/smoke/'
+# load dataset
+[src_images, tar_images] = load_images(path,path2)
+print('Loaded: ', src_images.shape, tar_images.shape)
+# save as compressed numpy array
+filename = 'cars_256.npz'
+savez_compressed(filename, src_images, tar_images)
+print('Saved dataset: ', filename)
