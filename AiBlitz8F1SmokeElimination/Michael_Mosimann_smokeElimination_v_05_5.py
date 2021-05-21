@@ -1,3 +1,4 @@
+# Code from the site : https://machinelearningmastery.com/how-to-develop-a-pix2pix-gan-for-image-to-image-translation/ .
 # example of loading a pix2pix model and using it for one-off image translation
 from keras.models import load_model
 from keras.preprocessing.image import img_to_array

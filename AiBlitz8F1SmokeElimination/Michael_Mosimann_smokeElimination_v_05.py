@@ -1,3 +1,4 @@
+# Code from the site : https://machinelearningmastery.com/how-to-develop-a-pix2pix-gan-for-image-to-image-translation/ .
 # load, split and scale the maps dataset ready for training
 from os import listdir
 from numpy import asarray
@@ -12,7 +13,7 @@ def load_images(path,path2, size=(256,256)):
   # enumerate filenames in directory, assume all are images
   i = 0
   for filename in listdir(path):
-    if (i == 2000):
+    if (i == 5000):
       break
     else:
       # load and resize the image
@@ -24,7 +25,7 @@ def load_images(path,path2, size=(256,256)):
       print(i)
   i = 0
   for filename in listdir(path2):
-    if (i == 2000):
+    if (i == 5000):
       break
     else:
       i = i +1

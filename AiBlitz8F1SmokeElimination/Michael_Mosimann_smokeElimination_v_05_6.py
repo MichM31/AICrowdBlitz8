@@ -1,3 +1,4 @@
+# Code from the site : https://machinelearningmastery.com/how-to-develop-a-pix2pix-gan-for-image-to-image-translation/ .
 import cv2
 import matplotlib.pyplot as plt
 import os
