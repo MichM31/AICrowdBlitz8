@@ -1,0 +1,144 @@
+import torch, torchvision
+import detectron2
+from detectron2.utils.logger import setup_logger
+setup_logger()
+
+from detectron2 import model_zoo
+from detectron2.engine import DefaultTrainer, DefaultPredictor
+from detectron2.config import get_cfg
+from detectron2.utils.visualizer import Visualizer
+from detectron2.data import MetadataCatalog, DatasetCatalog
+from detectron2.structures import BoxMode
+
+import pandas as pd
+import numpy as np
+import os
+from PIL import Image, ImageDraw
+import matplotlib.pyplot as plt
+from tqdm.notebook import tqdm
+import cv2
+import random
+from ast import literal_eval
+
+# Load data
+data_path = "data"
+
+train_df = pd.read_csv(os.path.join(data_path, "train.csv"))
+val_df = pd.read_csv(os.path.join(data_path, "val.csv"))
+
+# Defining a function to take a look at the images
+def show_images(images, num = 5):
+
+    images_to_show = np.random.choice(images, num)
+
+    for image_id in images_to_show:
+
+        image = Image.open(os.path.join(data_path, f"train/{image_id}.jpg"))
+
+        bbox = literal_eval(train_df.loc[train_df['ImageID'] == image_id]['bboxes'].values[0])
+
+        draw = ImageDraw.Draw(image)
+
+        draw.rectangle([bbox[0], bbox[2], bbox[1], bbox[3]], width=1)
+
+        plt.figure(figsize = (15,15))
+        plt.imshow(image)
+        plt.show()
+
+show_images(train_df['ImageID'].unique(), num = 5)
+
+#Create dataset
+dict_dataset = []
+def get_dataset_dics():
+
+    for index, row in train_df.iterrows():
+
+        image = Image.open(os.path.join(data_path, f"train/{row['ImageID']}.jpg"))
+        w, h = image.size
+
+        ann_lst = []
+
+        bbox = literal_eval(row['bboxes'])
+
+        ann_dict = {'bbox': [bbox[0], bbox[2], bbox[1], bbox[3]],
+        'bbox_mode': BoxMode.XYXY_ABS,
+        'category_id': 0, #i[1]['category_id'].values[0],
+        'iscrowd': 0}
+
+        ann_lst.append(ann_dict)
+
+        image_dict = {'annotations': ann_lst,
+            'file_name': os.path.join(data_path, f"train/{row['ImageID']}.jpg"),
+            'height': h,
+            'image_id': row["ImageID"], #i[1]['image_category_id'].values[0],
+            'width': w}
+
+        dict_dataset.append(image_dict)
+
+    return dict_dataset
+
+dict_dataset = get_dataset_dics()
+
+d = f"f1_train{np.random.randint(10000)}"
+DatasetCatalog.register(d, lambda d=d : get_dataset_dics())
+MetadataCatalog.get(d).set(thing_classes=["F1Cars"])
+obj_metadata = MetadataCatalog.get(d)
+
+for i in random.sample(dict_dataset, 3):
+    img = cv2.imread(i["file_name"])
+    visualizer = Visualizer(img, metadata=obj_metadata, scale=0.5)
+    out = visualizer.draw_dataset_dict(i)
+    plt.imshow(out.get_image())
+
+    cfg = get_cfg()
+
+cfg.merge_from_file(model_zoo.get_config_file("COCO-Detection/faster_rcnn_R_50_DC5_3x.yaml"))
+cfg.DATASETS.TRAIN = (d,)
+cfg.DATASETS.TEST = ()
+cfg.DATALOADER.NUM_WORKERS = 2
+cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-Detection/faster_rcnn_R_50_DC5_3x.yaml")
+cfg.SOLVER.IMS_PER_BATCH = 2
+cfg.SOLVER.BASE_LR = 0.00005#0.00025
+cfg.SOLVER.MAX_ITER = 5000#500
+cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128
+cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
+
+os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
+
+trainer = DefaultTrainer(cfg)
+trainer.resume_or_load(resume=False)
+trainer.train()
+
+cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
+cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5
+predictor = DefaultPredictor(cfg)
+
+#Predict test set
+test_imgs_paths = os.listdir(os.path.join(data_path, "test"))
+
+predictions = {"ImageID":[], "bboxes":[]}
+
+for test_img_path in tqdm(test_imgs_paths):
+
+  img = cv2.imread(os.path.join(data_path, "test", test_img_path))
+  h, w, _ = img.shape
+
+  model_predictions = predictor(img)
+
+  bboxes = model_predictions['instances'].pred_boxes.tensor.cpu().numpy().tolist()
+  scores = model_predictions['instances'].scores.cpu().numpy().tolist()
+
+  for n, bbox in enumerate(bboxes):
+
+      bbox.append(scores[n])
+
+      bboxes[n] = bbox
+
+  image_id = test_img_path.split('.')[0]
+
+  predictions['ImageID'].append(image_id)
+  predictions['bboxes'].append(bboxes)
+
+  submission = pd.DataFrame(predictions)
+
+  submission.to_csv("submission.csv", index=False)
