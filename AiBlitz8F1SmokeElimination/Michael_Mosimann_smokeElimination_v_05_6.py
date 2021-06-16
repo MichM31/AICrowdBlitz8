@@ -42,7 +42,7 @@ def load_image(filename, size=(256,256)):
 	return pixels
 
 # load model
-model = load_model('model_140000.h5')#model_040000.h5 , model_060000.h5, model_080000.h5 , model_120000.h5, model_140000.h5
+model = load_model('model_030000.h5')#model_040000.h5 , model_060000.h5
 # load source image
 for img_name in tqdm(os.listdir(test_data_path)):
   src_image = load_image(os.path.join(test_data_path, f"{img_name}"))

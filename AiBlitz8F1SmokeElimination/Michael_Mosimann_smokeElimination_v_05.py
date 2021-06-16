@@ -13,7 +13,7 @@ def load_images(path,path2, size=(256,256)):
   # enumerate filenames in directory, assume all are images
   i = 0
   for filename in listdir(path):
-    if (i == 5000):
+    if (i == 10000):#2000 original
       break
     else:
       # load and resize the image
@@ -22,10 +22,10 @@ def load_images(path,path2, size=(256,256)):
       clear_img = img_to_array(clear_img)
       tar_list.append(clear_img)
       i = i +1
-      print(i)
+      #print(i)
   i = 0
   for filename in listdir(path2):
-    if (i == 5000):
+    if (i == 10000):#2000 original, 5000, 10000
       break
     else:
       i = i +1
@@ -34,6 +34,7 @@ def load_images(path,path2, size=(256,256)):
       # convert to numpy array
       smoke_img = img_to_array(smoke_img)
       src_list.append(smoke_img)
+      #print(i)
   return [asarray(src_list), asarray(tar_list)]
 
 # dataset path

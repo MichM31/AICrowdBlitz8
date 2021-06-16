@@ -23,7 +23,7 @@ def load_image(filename, size=(256,256)):
 src_image = load_image('data/test/smoke/0.jpg')
 print('Loaded', src_image.shape)
 # load model
-model = load_model('model_140000.h5')#model_040000.h5 , model_060000.h5, model_080000.h5 , model_120000.h5, model_140000.h5
+model = load_model('model_040000.h5')
 # generate image from source
 gen_image = model.predict(src_image)
 # scale from [-1,1] to [0,1]
